@@ -1,0 +1,114 @@
+
+services:
+  service-one:
+    container_name: service-one
+    build:
+      context: ./service-one
+      dockerfile: Dockerfile
+    environment:
+ # Equivalente a -Dotel.service.name
+      OTEL_SERVICE_NAME: service-one
+
+      # Equivalente a -Dotel.traces.exporter
+      OTEL_TRACES_EXPORTER: otlp
+
+      # Equivalente a -Dotel.exporter.otlp.endpoint
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
+      # Equivalente a -Dotel.metrics.exporter
+      OTEL_METRICS_EXPORTER: none
+
+      # Equivalente a -Dotel.logs.exporter
+      OTEL_LOGS_EXPORTER: none
+      #MANAGEMENT_METRICS_EXPORT_OTLP_ENABLED: false
+      #MANAGEMENT_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+    ports:
+      - "8081:8080"
+    depends_on:
+      - otel-collector
+
+  service-two:
+    container_name: service-two
+    build:
+      context: ./service-two
+      dockerfile: Dockerfile
+    environment:
+      OTEL_SERVICE_NAME: service-two
+
+      # Equivalente a -Dotel.traces.exporter
+      OTEL_TRACES_EXPORTER: otlp
+
+      # Equivalente a -Dotel.exporter.otlp.endpoint
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+
+      # Equivalente a -Dotel.metrics.exporter
+      OTEL_METRICS_EXPORTER: none
+
+      # Equivalente a -Dotel.logs.exporter
+      OTEL_LOGS_EXPORTER: none
+      #MANAGEMENT_METRICS_EXPORT_OTLP_ENABLED: "false"
+     #MANAGEMENT_OTLP_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+
+    #- OTEL_SERVICE_NAME=service-two
+    #- OTEL_TRACES_EXPORTER=otlp
+    #- OTEL_METRICS_EXPORTER=none
+    #- OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
+    #- OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+    #- OTEL_LOGS_EXPORTER=none
+    #- MANAGEMENT_METRICS_EXPORT_OTLP_ENABLED=false
+    ports:
+      - "8082:8080"
+    depends_on:
+      - otel-collector
+
+#  jaeger:
+#    container_name: jaeger
+#    image: jaegertracing/all-in-one:latest
+#    ports:
+#      - "16686:16686"
+#      - "4317:4317"
+
+
+  jaeger:
+    image: jaegertracing/jaeger:2.14.1
+    ports:
+      - "16686:16686"   # UI
+    #command: ["--query.base-path=/"]
+
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml
+    command: ["--config=/etc/otelcol/config.yaml"]
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    depends_on:
+      - jaeger
+    
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor
+    ports:
+      - 8080:8080
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker:/var/lib/docker:ro

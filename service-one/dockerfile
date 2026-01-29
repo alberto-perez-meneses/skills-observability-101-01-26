@@ -1,0 +1,38 @@
+# =========================
+# Etapa 1: Build
+# =========================
+FROM maven:3.9.6-eclipse-temurin-17 AS build
+
+WORKDIR /app
+
+# Copiamos primero los archivos de dependencias
+COPY pom.xml .
+RUN mvn dependency:go-offline
+
+# Copiamos el código fuente
+COPY src ./src
+
+# Construimos el JAR
+RUN mvn clean package -DskipTests
+
+
+# =========================
+# Etapa 2: Runtime
+# =========================
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+# Copiamos el JAR generado desde la etapa de build
+COPY --from=build /app/target/*.jar app.jar
+
+# Puerto típico de Spring Boot
+EXPOSE 8080
+
+# Variables JVM opcionales (ajustables)
+ADD https://github.com/open-telemetry/opentelemetry-java-instrumentation/releases/latest/download/opentelemetry-javaagent.jar .
+ENV JAVA_TOOL_OPTIONS="-javaagent:./opentelemetry-javaagent.jar"
+ENV JAVA_OPTS=""
+
+# Comando de arranque
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
