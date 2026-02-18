@@ -1,17 +1,18 @@
 C4Container
-title Observabilidad con OpenTelemetry, Prometheus y Jaeger
+title Observabilidad con OpenTelemetry, Prometheus, Jaeger y OpenObserve
 
 Person(dev, "Developer", "Explora métricas, trazas y dashboards")
 
 System_Boundary(dashboards, "dashboards") {
     Container(grafana, "Grafana", "Grafana","Dashboards y visualización")
     Container(jaeger, "Jaeger", "Jaeger 2.x","Almacena y visualiza trazas distribuidas")
+    Container(openobserve, "OpenObserve", "OpenObserve Enterprise","Plataforma unificada de observabilidad (logs, trazas, métricas)")
   
 }
 
 System_Boundary(collector,"collect and store metrics"){
    Container(prometheus, "Prometheus", "Prometheus Server","Scrapea métricas del OTEL Collector")
-   Container(otelCollector, "otel-collector", "OpenTelemetry Collector","Recibe OTLP, exporta trazas a Jaeger y métricas a Prometheus")
+   Container(otelCollector, "otel-collector", "OpenTelemetry Collector","Recibe OTLP, exporta trazas a Jaeger y OpenObserve, métricas a Prometheus")
    Container(cadvisor, "cAdvisor", "cAdvisor","Métricas de contenedores Docker")
     
 }
@@ -26,12 +27,15 @@ Rel(serviceOne, otelCollector, "Envía trazas", "OTLP gRPC :4317")
 Rel(serviceTwo, otelCollector, "Envía trazas", "OTLP gRPC :4317")
 
 Rel(otelCollector, jaeger, "Exporta trazas", "OTLP gRPC :4317")
+Rel(otelCollector, openobserve, "Exporta trazas", "OTLP gRPC :5081")
 
 Rel(prometheus, otelCollector, "Scrapea métricas", "HTTP :8889 /metrics")
 Rel(prometheus, cadvisor, "Scrapea métricas", "HTTP :8080/metrics")
+Rel(prometheus, openobserve, "Envía métricas", "Remote Write HTTP :5080 /api/default/prometheus/api/v1/write")
 
 Rel(dev, grafana, "Visualiza métricas", "HTTP :3000")
 Rel(dev, jaeger, "Visualiza trazas", "HTTP :16686")
+Rel(dev, openobserve, "Visualiza logs, trazas y métricas", "HTTP :5080")
 Rel(grafana, prometheus, "Consulta métricas", "PromQL")
 
 

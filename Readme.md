@@ -9,6 +9,7 @@ Este proyecto implementa una **arquitectura de observabilidad completa** para mi
 - **Jaeger** (trazas)
 - **Prometheus** (métricas)
 - **Grafana** (visualización)
+- **OpenObserve** (plataforma unificada de observabilidad)
 - **cAdvisor** (métricas de contenedores)
 - **Docker Compose**
 
@@ -33,6 +34,7 @@ Servicios principales:
 | prometheus     | 9090               | Métricas                            |
 | grafana        | 3000               | Dashboards                          |
 | cadvisor       | 8080               | Métricas de contenedores            |
+| openobserve    | 5080               | Plataforma de observabilidad (logs, trazas, métricas) |
 
 ---
 
@@ -115,6 +117,15 @@ exporters:
     tls:
       insecure: true
 
+  otlp/openobserve:
+    endpoint: openobserve:5081
+    headers:
+      Authorization: "${OPENOBSERVE_BEARER_TOKEN}"
+      organization: default
+      stream-name: default
+    tls:
+      insecure: true
+
   prometheus:
     endpoint: 0.0.0.0:8889
     send_timestamps: true
@@ -126,7 +137,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger]
+      exporters: [otlp/jaeger, otlp/openobserve]
 
     metrics:
       receivers: [otlp]
@@ -177,6 +188,28 @@ scrape_configs:
 
 ---
 
+##  OpenObserve
+
+* URL: [http://localhost:5080](http://localhost:5080)
+* Variables de entorno requeridas:
+  * `ZO_ROOT_USER_EMAIL`: Email del usuario root
+  * `ZO_ROOT_USER_PASSWORD`: Contraseña del usuario root
+  * `OPENOBSERVE_BEARER_TOKEN`: Token de autenticación para el exporter OTLP
+
+OpenObserve es una **plataforma unificada de observabilidad** que centraliza logs, trazas y métricas.
+
+### Integraciones
+
+* **Trazas**: Recibe trazas desde el OpenTelemetry Collector vía OTLP (puerto 5081)
+* **Métricas**: Recibe métricas desde Prometheus mediante remote write (`/api/default/prometheus/api/v1/write`)
+* **Logs**: Preparado para recibir logs mediante OpenTelemetry
+
+### Configuración
+
+El OpenTelemetry Collector envía trazas a OpenObserve usando el exporter `otlp/openobserve` con autenticación Bearer Token. Prometheus está configurado para enviar métricas mediante remote write con autenticación básica.
+
+---
+
 ##  Verificación rápida
 
 ```bash
@@ -188,6 +221,9 @@ http://localhost:9090/targets
 
 # Jaeger UI
 http://localhost:16686
+
+# OpenObserve UI
+http://localhost:5080
 ```
 
 ---
@@ -196,7 +232,7 @@ http://localhost:16686
 
 * Dashboards Grafana por servicio (`service_name`)
 * Alertas Prometheus (heap > 80%, latencia p95)
-* Logs OTEL - Loki ,openobserve o elasticsearch
+* Configurar logs OTEL en OpenObserve (ya implementado para trazas y métricas)
 * Sampling dinámico de trazas
 * Create and monitoring a frontend
 ---

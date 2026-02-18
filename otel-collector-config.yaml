@@ -24,6 +24,14 @@ exporters:
       enabled: true
     #tls:
     #  insecure: true
+  otlp/openobserve:
+    endpoint: openobserve:5081
+    headers:
+      Authorization: "${OPENOBSERVE_BEARER_TOKEN}"
+      organization: default
+      stream-name: default
+    tls:
+      insecure: true
 
 processors:
   batch:
@@ -33,7 +41,7 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch]
-      exporters: [otlp/jaeger]
+      exporters: [otlp/jaeger,otlp/openobserve]
     metrics:
       receivers: [otlp]
       exporters: [prometheus]

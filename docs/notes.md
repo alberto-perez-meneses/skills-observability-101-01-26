@@ -4,3 +4,4 @@ alert manager
 https://opentelemetry.io/docs/collector/configuration/#receivers
 
 https://www.jaegertracing.io/docs/2.14/architecture/spm/
+

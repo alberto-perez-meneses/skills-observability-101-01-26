@@ -19,5 +19,5 @@ remote_write:
     queue_config:
       max_samples_per_send: 10000
     basic_auth:
-      username: root@example.com
-      password: sodGSwszbDuGDXYz
+      username: "__OPENOBSERVE_REMOTE_USER__"
+      password: "__OPENOBSERVE_REMOTE_KEY__"
