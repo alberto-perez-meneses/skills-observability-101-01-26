@@ -29,23 +29,32 @@ exporters:
     headers:
       Authorization: "${OPENOBSERVE_BEARER_TOKEN}"
       organization: default
-      stream-name: default
+      stream-name: "%{service.name}"
     tls:
       insecure: true
 
 processors:
   batch:
+  resource:
+    attributes:
+      - key: deployment.environment
+        value: docker-demo
+        action: upsert
+
+      - key: telemetry.stack
+        value: observability-workshop
+        action: upsert
 
 service:
   pipelines:
     traces:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource,batch]
       exporters: [otlp/jaeger,otlp/openobserve]
     metrics:
       receivers: [otlp]
       exporters: [prometheus]
     logs:
       receivers: [otlp]
-      processors: [batch]
+      processors: [resource,batch]
       exporters: [otlp/openobserve]
