@@ -40,6 +40,17 @@ services:
     depends_on:
       - otel-collector
 
+  frontend:
+    container_name: frontend
+    build:
+      context: ./frontend
+      dockerfile: dockerfile
+    ports:
+      - "80:3000"
+    depends_on:
+      - service-one
+      - service-two
+
   jaeger:
     image: jaegertracing/jaeger:2.14.1
     ports:
